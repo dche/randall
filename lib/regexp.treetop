@@ -1,0 +1,142 @@
+
+
+grammar RegExp
+	rule regexp
+		pre:'^'? exp_body post:'$'? {			
+			def rand
+				(pre.emtpy? ? any_str : '') + 
+				exp_body.rand +
+				(post.empty? ? any_str : '')
+			end
+		}
+	end
+	
+	rule exp_body
+		clause rc:clause* {
+			def rand
+				clause.rand + rc.elements.map(&:rand).reduce('', :+)
+			end
+		}
+		/ choice {
+			def rand
+				choice.rand
+			end
+		}
+	end
+	
+	rule clause
+		distinguishable q:quantifier? {
+			def rand
+				distinguishable.rand * (q.empty? ? 1 : q.repeatition)
+			end
+		}
+	end
+	
+	rule distinguishable
+		group {
+			def rand
+				group.rand
+			end
+		}
+		/ constants {
+			def rand
+				constants.rand
+			end
+		}
+		/ char_class {
+			def rand
+				char_class.rand
+			end
+		}
+		/ escapes {
+			def rand
+				escapes.rand
+			end
+		}
+		/ '.' {
+			def rand
+				# return a char
+				'a'
+			end
+		}
+	end
+	
+	rule group
+		'(' exp_body ')' {
+			def rand
+				exp_body.rand
+			end
+		}
+	end
+	
+	rule choice
+		distinguishable rest_choice {
+			def rand
+				Kernel.rand(2) == 0 ? distinguishable.rand : rest_choice.rand
+			end
+		}
+	end
+	
+	rule rest_choice
+	 	'|' distinguishable rc:rest_choice? { # must use lable because of '?'
+			def rand
+				return distinguishable.rand if rc.empty?
+				Kernel.rand(2) == 0 ? distinguishable.rand : rc.rand
+			end
+		}
+	end
+	
+	rule constants
+		[^\/\\\[\(\{\*\.\+\^\?\-\]\}\)\:]+ {
+			def rand
+				self.text_value
+			end
+		}
+	end
+	
+	rule char_class
+		posix_char_class {
+			
+		}
+		/ perl_char_class {
+			
+		}
+	end
+	
+	rule posix_char_class
+		'[[:' constants ':]]'
+	end
+	
+	rule perl_char_class
+		'[' '^'? constants ']'
+	end
+	
+	rule escapes
+		'\\' [a-zA-Z\/]
+	end
+	
+	rule quantifier
+		('*' / '+' / '?' / '{' ','? [0-9]+ '}' / '{' [0-9]+ ',' ([0-9]+)? '}') {
+			def repeatition
+				case self.text_value
+				when '*'
+					Kernel.rand(20)
+				when '+'
+					1 + Kernel.rand(20)
+				when '?'
+					Kernel.rand(2)
+				when /\{\,([0-9]+)\}/
+					Kernel.rand($1 + 1)
+				when /\{([0-9]+)\}/
+					$1
+				when /\{([0-9]+)\,\}/
+					$1 + Kernel.rand(20)
+				when /\{([0-9]+)\,([0-9]+)\}/
+					$1 + Kernel.rand($2 - $1 + 1)
+				else
+					0
+				end
+			end
+		}
+	end
+end
