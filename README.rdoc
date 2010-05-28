@@ -35,15 +35,15 @@ The key to use this gem is
 
 === Syntax sugars
 
-Some methods are provided to construct a NextRand object without 
+Some methods are provided to construct a Randall object without 
 
  # Just give me a random object of given type.
- nr = NextRand
+ nr = Randall
  nr.integers.less_than(100)
  nr.floats.gt(100)
  
- number = NextRand.strings.that.match(/[0-9]/)
- NextRand.arrays.of(number).size(100)
+ number = Randall.strings.that.match(/[0-9]/)
+ Randall.arrays.of(number).size(100)
  nr.instances_of(String)
  
 

@@ -7,7 +7,7 @@
 #
 
 require File.join(File.dirname(__FILE__), 'spec_helper')
-require File.join(File.dirname(__FILE__), '../lib/nextrand')
+require File.join(File.dirname(__FILE__), '../lib/randall')
 
 class Kls
   def initialize(a, b, c); end
@@ -17,9 +17,9 @@ class Klass
   def initialize(o); end
 end
 
-vg = NextRand.new
+vg = Randall.new
 
-describe NextRand do
+describe Randall do
   it "should generate value with expected types" do
     [Integer, Float, String, Array, Hash].each do |c|
       vg.r(c).should.be.is_a c
@@ -77,13 +77,13 @@ describe NextRand do
     end
   end
   
-  it "should accept another NextRand object for elements" do
-    items = NextRand.new(Integer)
+  it "should accept another Randall object for elements" do
+    items = Randall.new(Integer)
     vg.r(Array, :item => items).each do |i|
       i.should.is_a Integer
     end
     
-    vg.r(Hash, :key => NextRand.new(String), :value => NextRand.new(Float))
+    vg.r(Hash, :key => Randall.new(String), :value => Randall.new(Float))
     vg.v.keys.each do |s|
       s.should.is_a String
     end
@@ -100,9 +100,9 @@ describe NextRand do
   end
   
   it "should generate instance of any class" do
-    vg.r(Kls, :args => ['Args', :in, NextRand.new(String)])
+    vg.r(Kls, :args => ['Args', :in, Randall.new(String)])
     vg.v.should.be.instance_of Kls
     
-    NextRand.new(Klass, :args => [vg]).next.should.be.instance_of Klass
+    Randall.new(Klass, :args => [vg]).next.should.be.instance_of Klass
   end
 end

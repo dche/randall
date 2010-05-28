@@ -3,7 +3,7 @@ require 'rake'
 require 'rake/gempackagetask'
 
 spec = Gem::Specification.new do |s|
-  s.name = 'nextrand'
+  s.name = 'randall'
   s.version = '1.0'
   s.summary = 'Generate random instances of any classes.'
   

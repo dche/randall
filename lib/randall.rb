@@ -3,7 +3,7 @@
 require 'treetop'
 Treetop.load File.join(File.dirname(__FILE__), 'regexp')
 
-class NextRand  
+class Randall  
   attr_reader :value
   
   @@reparser = RegExpParser.new
