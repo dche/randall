@@ -1,12 +1,14 @@
 
 
 require 'treetop'
+
+require File.join(File.dirname(__FILE__), 'randall/charclass')
 Treetop.load File.join(File.dirname(__FILE__), 'regexp')
 
-class Randall  
+class Randall
   attr_reader :value
   
-  @@reparser = RegExpParser.new
+  @@reparser = RandallRegExpParser.new
 
   def initialize(type = Integer, opts = {})
     @type = type
