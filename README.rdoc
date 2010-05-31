@@ -1,16 +1,17 @@
-# -*- encoding: utf-8 -*-
+# encoding: utf-8
 #
-= nextrand
+= Randall
 
-Generates instances of any class randomly.
+Randomly generates instances of any class.
 
 == Dependencies
 
 Beautiful treetop{http://treetop.rubyforge.org/} is needed for parsing
 regular expressions, so we can generate random character strings matching
-certain regexp.
+a regexp.
 
-Slim bacon{http://rubygems.org/gems/bacon} is used for executing specs.
+Slim bacon{http://rubygems.org/gems/bacon/} is used for executing specs.
+You need not install bacon for using Randall.
 
 == Install
 
@@ -35,30 +36,35 @@ The key to use this gem is
 
 === Syntax sugars
 
-Some methods are provided to construct a Randall object without 
+Some methods are provided to specify the type and restrictions.
 
- # Just give me a random object of given type.
- nr = Randall
- nr.integers.less_than(100)
- nr.floats.gt(100)
+ r = Randall
+ r.integers.less_than(100)  # Same as r.generate(Integer, :less_than => 100)
+ r.floats.gt(100) # => r.generate(Float, :greater_than => 100)
+ r.floats.clost_to(0)
+ r.integers.in_range(1..2)
  
- number = Randall.strings.that.match(/[0-9]/)
+For generating strings.
+ number = Randall.strings.that.match(/[0-9]+/)
+
+Above example has effect as 
+<code>Randall.new(String, :like => /[0-9]+/)</code>.
+
  Randall.arrays.of(number).size(100)
- nr.instances_of(String)
- 
-
-
-=== Other goodies
-
-==== Borrowed ideas
-
-
- [1,2,3].pick
- /(1|0)+/.rand
+ Randall.hashes.from(Integer).to(String).size(10)
  
 ==== Some monkey patching
 
+1. +Array#pick+
  
+1. +Regexp#rand+
+
+== Limitations on Generating Strings for Regular Expressions
+
+* Anchors, except ^ and $, are ignored.
+* \p{*} and \P{*} are not supported, and will be ignored if presents.
+* (?*) extension is not supported, and will be ignored if presents.
+* Back-reference is not supported.
  
 == License
 
