@@ -1,21 +1,47 @@
-
+# encoding: utf-8
+#
+# randall.rb
+#
+# copyright (c) 2010, Diego Che (chekenan@gmail.com)
+#
 
 require 'treetop'
 
 require File.join(File.dirname(__FILE__), 'randall/charclass')
 Treetop.load File.join(File.dirname(__FILE__), 'regexp')
 
+require File.join(File.dirname(__FILE__), 'randall/sugar')
+require File.join(File.dirname(__FILE__), 'randall/monkey_patch')
+
+# A random value generator.
+#
+# 
 class Randall
+  include RandallInstanceSugar
+  class <<self; self; end.class_eval do
+    include RandallClassSugar
+  end
+  
+  # The generated random value. It is changed after +rand+ or +next+ are
+  # called.
   attr_reader :value
   
+  # The regexp parser for generating random String.
   @@reparser = RandallRegExpParser.new
 
+  # Creates a Randall object.
+  #
+  # [type] Type of the values the Randall object should generate.
+  # [opts] Optional. The restrictions the generated random values should
+  #                  satisfy. See documents of +Randall+ for restrictions
+  #                  of each supported types, and how this arguments is
+  #                  specified.
   def initialize(type = Integer, opts = {})
     @type = type
-    @options = opts
     
     Kernel.srand Integer(Time.now)
-    parse_regexp
+    
+    self.restrict opts
     
     @worker = Fiber.new do
       loop do
@@ -40,22 +66,31 @@ class Randall
     end
   end
 
-  # Same as self.value.
+  # Same as +self.value+.
   def v
     self.value
   end
 
-  # Generate value for given type and options.
+  # Generates value for given type and restrictions.
+  # This method is used when you want to reuse a Randall object to generate
+  # values for alternate type.
   def rand(type, opts = {})
     @type = type
-    @options = opts
     
-    parse_regexp
+    self.restrict opts
     @worker.resume
   end
   alias :r :rand
+  
+  # Set the restriction. You use this method to change the restrictions
+  # the generated values should satisfy.
+  def restrict(opts)
+    @options = opts
+    
+    parse_regexp
+  end
 
-  # Generate another value for current type and options.
+  # Generate another value under current type and restrictions.
   def next
     @worker.resume
   end
@@ -135,8 +170,7 @@ class Randall
   end
 
   def parse_regexp
-    return self unless @type.is_a? String
-    
+    return self unless @type == String
     re = @options[:like].nil? ? /.*/ : @options[:like]
     
     @str_gen = @@reparser.parse re.source
