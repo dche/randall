@@ -1,5 +1,5 @@
 #
-# nextrand_spec.rb -- Core functions.
+# randall_spec.rb -- Core functions.
 # 
 # This file is covered by the MIT license. See LICENSE for more details.
 #
