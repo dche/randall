@@ -5,6 +5,7 @@
 # copyright (c) 2010, Diego Che (chekenan@gmail.com)
 #
 
+# The grammar module.
 module RandallRegExp
   module CharSets
     
@@ -80,20 +81,20 @@ module RandallRegExp
     
     # '[' neg:'^'? comp:(cc_comp / char_class)+ amps:('&&' char_class)? ']'
     def chars
-			return @chars if @chars
-			
-			# build charset
-			@chars = comp.elements.map(&:chars).reduce([], :+).uniq
-			@chars &= amps.elements[1].chars unless amps.empty?
-			@chars = self.all_chars - @chars unless neg.empty?
-			
-			@chars
+      return @chars if @chars
+
+      # build charset
+      @chars = comp.elements.map(&:chars).reduce([], :+).uniq
+      @chars &= amps.elements[1].chars unless amps.empty?
+      @chars = self.all_chars - @chars unless neg.empty?
+
+      @chars
     end
     
-		def rand
-		  self.chars
-			@chars.empty? ? '' : @chars[Kernel.rand(@chars.size)]
-		end
+    def rand
+      self.chars
+    	@chars.empty? ? '' : @chars[Kernel.rand(@chars.size)]
+    end
   end
   
   class PosixCharClass < CharClass
@@ -139,28 +140,28 @@ module RandallRegExp
     end
 	end
 		
-	class PerlCharClass < CharClass
-	  def chars
-	    @chars ||= case self.text_value
-			when '\s'
-			  self.space
-			when '\S'
-			  self.all_chars - self.space
-			when '\d'
-			  self.digit
-			when '\D'
-			  self.all_chars - self.digit
-			when '\h'
-			  self.xdigit
-			when '\H'
-			  self.all_chars - self.xdigit
-			when '\w'
-			  self.word
-			when '\W'
-			  self.all_chars - self.word
-			else
-				[]
-			end
+  class PerlCharClass < CharClass
+    def chars
+      @chars ||= case self.text_value
+      when '\s'
+        self.space
+      when '\S'
+        self.all_chars - self.space
+      when '\d'
+        self.digit
+      when '\D'
+        self.all_chars - self.digit
+      when '\h'
+        self.xdigit
+      when '\H'
+        self.all_chars - self.xdigit
+      when '\w'
+        self.word
+      when '\W'
+        self.all_chars - self.word
+      else
+      	[]
+      end
     end
   end
   
