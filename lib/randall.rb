@@ -39,8 +39,7 @@ class Randall
   def initialize(type = Integer, opts = {})
     @type = type
     
-    Kernel.srand Integer(Time.now)
-    
+    # Kernel.srand Integer(Time.now)
     self.restrict opts
     
     @worker = Fiber.new do
@@ -171,9 +170,11 @@ class Randall
 
   def parse_regexp
     return self unless @type == String
-    re = @options[:like].nil? ? /.*/ : @options[:like]
+    re = @options[:like] && @options[:like].is_a?(Regexp) ? @options[:like] : /.*/
     
     @str_gen = @@reparser.parse re.source
+    raise RuntimeError, "Randall is not strong enough to handle regexp: #{re.inspect}" if @str_gen.nil?
+    
     self
   end
 end
