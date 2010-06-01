@@ -39,7 +39,6 @@ class Randall
   def initialize(type = Integer, opts = {})
     @type = type
     
-    # Kernel.srand Integer(Time.now)
     self.restrict opts
     
     @worker = Fiber.new do
