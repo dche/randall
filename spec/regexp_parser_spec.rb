@@ -12,9 +12,7 @@ parser = RandallRegExpParser.new
 
 describe RandallRegExpParser do
   it 'should parse valid regular expressions.' do
-    puts
     REGEXPS.each do |re|
-      puts re.source
       parser.parse(re.source).should.not.be.nil
     end
   end

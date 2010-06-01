@@ -1,62 +1,55 @@
+# encoding: utf-8
+# 
+# copyright (c) 2010, Diego Che (chekenan@gmail.com)
+# 
 
-
-grammar RegExp
+grammar RandallRegExp
 	rule regexp
-		pre:'^'? exp_body post:'$'? {			
+		pre:'^'? exp_body post:'$'? {
+			include CharSets
+					
 			def rand
-				(pre.emtpy? ? any_str : '') + 
+				(pre.empty? ? self.any_str : '') +
 				exp_body.rand +
-				(post.empty? ? any_str : '')
+				(post.empty? ? self.any_str : '')
+			end
+			
+			def any_str
+				''
 			end
 		}
 	end
 	
 	rule exp_body
-		clause rc:clause* {
+		clause rc:clause* sel:choice? {
 			def rand
-				clause.rand + rc.elements.map(&:rand).reduce('', :+)
-			end
-		}
-		/ choice {
-			def rand
-				choice.rand
+				head = clause.rand + rc.elements.map(&:rand).reduce('', :+)
+				unless sel.empty? then
+					Kernel.rand(2) == 0 ? head : sel.rand
+				else
+					head
+				end
 			end
 		}
 	end
 	
 	rule clause
-		distinguishable q:quantifier? {
+		distinguishable q:quantifier? opt:'?'? {
 			def rand
-				distinguishable.rand * (q.empty? ? 1 : q.repeatition)
+				(q.empty? ? 1 : q.repeatition).times.map do
+					distinguishable.rand
+				end.reduce('', :+)
 			end
 		}
 	end
 	
 	rule distinguishable
-		group {
+		group / constants / char_class / escapes / '.' {
+			include CharSets
+			
 			def rand
-				group.rand
-			end
-		}
-		/ constants {
-			def rand
-				constants.rand
-			end
-		}
-		/ char_class {
-			def rand
-				char_class.rand
-			end
-		}
-		/ escapes {
-			def rand
-				escapes.rand
-			end
-		}
-		/ '.' {
-			def rand
-				# return a char
-				'a'
+				g = self.graph
+				g[Kernel.rand(g.size)]
 			end
 		}
 	end
@@ -68,26 +61,17 @@ grammar RegExp
 			end
 		}
 	end
-	
+		
 	rule choice
-		distinguishable rest_choice {
+	 	'|' exp_body {
 			def rand
-				Kernel.rand(2) == 0 ? distinguishable.rand : rest_choice.rand
-			end
-		}
-	end
-	
-	rule rest_choice
-	 	'|' distinguishable rc:rest_choice? { # must use lable because of '?'
-			def rand
-				return distinguishable.rand if rc.empty?
-				Kernel.rand(2) == 0 ? distinguishable.rand : rc.rand
+				exp_body.rand
 			end
 		}
 	end
 	
 	rule constants
-		[^\/\\\[\(\{\*\.\+\^\?\-\]\}\)\:]+ {
+		[^\\\[\(\{\*\.\+\?\-\]\}\)\^\$\|] {
 			def rand
 				self.text_value
 			end
@@ -95,24 +79,77 @@ grammar RegExp
 	end
 	
 	rule char_class
-		posix_char_class {
-			
-		}
-		/ perl_char_class {
-			
-		}
+		'\\' char_class_escape <PerlCharClass>
+		/ '[' neg:'^'? comp:(cc_comp / char_class)+ amps:('&&' char_class)? ']' <CharClass>
+	end
+		
+	rule char_class_escape
+		'd' / 'D' / 'h' / 'H' / 's' / 'S' / 'w' / 'W' / encoding_property
+	end
+	
+	rule encoding_property
+		('p' / 'P') '{' neg:'^'? encoding '}'
+	end
+	
+	rule encoding
+		'Alnum' / 'Alpha' / 'Blank' / 'Cntrl' / 'Digit' / 'Graph'
+		/ 'Lower' / 'Print' / 'Punct' / 'Space' / 'Upper' / 'XDigit'
+		/ 'Word' / 'ASCII' / [a-zA-Z]+
+	end
+	
+	rule cc_comp
+		posix_char_class / span_char_class / escaped_chars
 	end
 	
 	rule posix_char_class
-		'[[:' constants ':]]'
+		'[:' neg:'^'? pcc_name ':]' <PosixCharClass>
 	end
 	
-	rule perl_char_class
-		'[' '^'? constants ']'
+	rule pcc_name
+		'alnum' / 'alpha' / 'ascii' / 'blank' / 'cntrl' / 'digit'/ 'graph'
+		/ 'lower' / 'print' / 'punct' / 'space' / 'uppder' / 'xdigit' / 'word'
+	end
+	
+	rule span_char_class
+		[0-9] '-' [0-9] <SpanCharClass>
+		/ [a-z] '-' [a-z] <SpanCharClass>
+		/ [A-Z] '-' [A-Z] <SpanCharClass> 
+		/ [0-9a-zA-Z^$.+*(){}]+ <SpanCharClass>	# TODO: incomplete chars.
+	end
+	
+	rule escaped_chars
+		('\[' / '\]' / '\-' / '\/') {
+			def chars
+				[self.text_value]
+			end
+			
+			def rand
+				self.chars
+				self.text_value[1]
+			end
+		}
 	end
 	
 	rule escapes
-		'\\' [a-zA-Z\/]
+		'\\' [^dDhHsSwWpPx] {
+			def rand
+				case self.text_value
+				when /\\[aAzZbB]/
+					''
+				when /\\x(\d+)/
+					# TODO: ascii only. To support unicode.
+					$1.to_a.chr
+				when '\r'
+					"\r"
+				when '\n'
+					"\n"
+				when '\t'
+					"\t"
+				else 
+					self.text_value[1]
+				end
+			end
+		}
 	end
 	
 	rule quantifier
@@ -120,19 +157,20 @@ grammar RegExp
 			def repeatition
 				case self.text_value
 				when '*'
-					Kernel.rand(20)
+					Kernel.rand(5)
 				when '+'
-					1 + Kernel.rand(20)
+					1 + Kernel.rand(5)
 				when '?'
 					Kernel.rand(2)
 				when /\{\,([0-9]+)\}/
-					Kernel.rand($1 + 1)
+					Kernel.rand($1.to_i + 1)
 				when /\{([0-9]+)\}/
-					$1
+					$1.to_i
 				when /\{([0-9]+)\,\}/
-					$1 + Kernel.rand(20)
+					$1.to_i + Kernel.rand(5)
 				when /\{([0-9]+)\,([0-9]+)\}/
-					$1 + Kernel.rand($2 - $1 + 1)
+					# TODO: ensure $2 >= $1
+					$1.to_i + Kernel.rand($2.to_i - $1.to_i + 1)
 				else
 					0
 				end
