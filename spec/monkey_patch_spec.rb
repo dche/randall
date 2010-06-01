@@ -15,12 +15,8 @@ describe 'MonkeyPatches' do
   end
   
   the 'regexp should generate random string that matches it.' do
-    puts
     REGEXPS.each do |re|
-      print re.inspect
-      s = re.rand
-      puts " => '%s'" % s
-      s.should.satisfy do |s| s =~ re; end
+      re.rand.should.satisfy do |s| s =~ re; end
     end
   end
 end
