@@ -6,7 +6,7 @@
 #
 
 # The grammar module.
-module RandallRegExp
+module RandallRegExp # :nodoc: all
   module CharSets
     
     def strseq(from, to)
