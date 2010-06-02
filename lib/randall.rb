@@ -25,6 +25,8 @@ class Randall
   # The generated random value. It is changed after +rand+ or +next+ are
   # called.
   attr_reader :value
+  # The +Class+ for which the receiver should generate instances. 
+  attr_reader :type
   
   # The regexp parser for generating random String.
   @@reparser = RandallRegExpParser.new
@@ -57,7 +59,7 @@ class Randall
           @value = g_any
         else
           @value = nil
-        end 
+        end
 
         Fiber.yield @value
       end
@@ -84,8 +86,9 @@ class Randall
   # the generated values should satisfy.
   def restrict(opts)
     @options = opts
-    
-    parse_regexp
+    parse_regexp if @type == String
+
+    self
   end
 
   # Generate another value under current type and restrictions.
@@ -114,13 +117,20 @@ class Randall
       max = @options[:range].max
 
       min + Kernel.rand * (max - min)
-    elsif @options[:greater_than]
-      # TODO: :gt and :lt should be able to coexist.
-      @options[:greater_than] + Kernel.rand * (10 ** 12)
-    elsif @options[:less_than]
-      @options[:less_than] - Kernel.rand * (10 ** 12)
+    elsif @options[:greater_than] or @options[:less_than]      
+      max = @options[:less_than] || 10 ** 24
+      min = @options[:greater_than] || max - 10 ** 24
+      
+      if min >= max
+        if @options[:greater_than] and @options[:less_than]
+          raise ArgumentError, ":less_than(#{max}) should be greater than :grater_than(#{min})."
+        elsif @options[:greater_than]
+          max = min + 10 ** 24
+        end
+      end
+      min + Kernel.rand * (max - min)
     else
-      Kernel.rand * (10 ** 12)
+      Kernel.rand * (10 ** 6)
     end
   end
 
@@ -141,8 +151,14 @@ class Randall
     value_gen = @options[:value] || self.class.new(@options[:value_type] || rand_type)
 
     v = {}
+    dup_retry = 3
     sz.times do
+      k = key_gen.next while v[k] && (dup_retry -= 1) > 0
       v[key_gen.next] = value_gen.next
+    end
+    if v.size < sz && @options[:size]
+      $stderr.puts "[Warning]: The key space is too small to generate #{sz} pairs."
+      $stderr.puts key_gen.type
     end
     v
   end
@@ -169,10 +185,10 @@ class Randall
 
   def parse_regexp
     return self unless @type == String
-    re = @options[:like] && @options[:like].is_a?(Regexp) ? @options[:like] : /.*/
+    re = @options[:like].is_a?(Regexp) ? @options[:like] : /.+/
     
     @str_gen = @@reparser.parse re.source
-    raise RuntimeError, "Randall is not strong enough to handle regexp: #{re.inspect}" if @str_gen.nil?
+    raise RuntimeError, "Randall is not strong enough (yet) to handle regexp: #{re.inspect}" if @str_gen.nil?
     
     self
   end

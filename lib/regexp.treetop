@@ -71,7 +71,7 @@ grammar RandallRegExp
 	end
 	
 	rule constants
-		[^\\\[\(\{\*\.\+\?\-\]\}\)\^\$\|] {
+		[^\\\[\(\{\*\.\+\?\]\}\)\^\$\|] {
 			def rand
 				self.text_value
 			end
@@ -157,9 +157,9 @@ grammar RandallRegExp
 			def repeatition
 				case self.text_value
 				when '*'
-					Kernel.rand(5)
+					Kernel.rand(20)
 				when '+'
-					1 + Kernel.rand(5)
+					1 + Kernel.rand(20)
 				when '?'
 					Kernel.rand(2)
 				when /\{\,([0-9]+)\}/
@@ -167,7 +167,7 @@ grammar RandallRegExp
 				when /\{([0-9]+)\}/
 					$1.to_i
 				when /\{([0-9]+)\,\}/
-					$1.to_i + Kernel.rand(5)
+					$1.to_i + Kernel.rand(20)
 				when /\{([0-9]+)\,([0-9]+)\}/
 					# TODO: ensure $2 >= $1
 					$1.to_i + Kernel.rand($2.to_i - $1.to_i + 1)

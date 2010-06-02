@@ -53,17 +53,18 @@ describe Randall do
       vg.r(Float, :range => 1..100).should.satisfy do |f|
         f > 1 and f < 100
       end
+      vg.r(Integer, :greater_than => -1, :less_than => 12345).should.satisfy do |i|
+        i.should.is_a Integer
+        i.should.satisfy do |i|; i > -1 and i < 12345; end
+      end
+      
     end
   end
   
   it "should generate compound object" do
-    vg.r(Array, :type => Integer, :size => 3, :greater_than => -1, :less_than => 12345)
+    vg.r(Array, :type => Integer, :size => 3)
     vg.v.should.is_a Array
     vg.v.length.should.equal 3
-    vg.v.each do |i|
-      i.should.is_a Integer
-      i.should.satisfy do |i|; i > -1 and i < 12345; end
-    end
     
     vg.r(Hash, :key_type => Float, :value_type => String, :size => 100)
     vg.v.should.is_a Hash
@@ -94,9 +95,11 @@ describe Randall do
   end
   
   it "should generate expected strings" do
-    vg.r(String, :like => /AB[0-9]+/).should.satisfy do |s|
-      s =~ /AB[0-9]+/
-    end
+    vg.r(String, :like => /AB[0-9]+/).should.match /AB[0-9]+/
+  end
+  
+  it "should reject un-supported regexp" do
+    should.raise(RuntimeError) { vg.r(String, :like => /((?>X+))(?!O)/) }
   end
   
   it "should generate instance of any class" do
