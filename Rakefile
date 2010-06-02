@@ -4,7 +4,7 @@ require 'rake/gempackagetask'
 
 spec = Gem::Specification.new do |s|
   s.name = 'randall'
-  s.version = '0.1'
+  s.version = '0.1.1'
   s.summary = 'Generate random instances of any classes.'
   s.description = s.summary
   
@@ -12,13 +12,17 @@ spec = Gem::Specification.new do |s|
   s.email = 'chekenan@gmail.com'
   
   s.files = %w(README.rdoc LICENSE lib/regexp.treetop) + 
-            Dir.glob('{lib, spec}/*.rb')
+            Dir.glob('lib/**/*.rb')
   
-  s.required_ruby_version = '1.9'
+  s.required_ruby_version = '>= 1.9'
   s.platform = Gem::Platform::RUBY
   
   s.add_dependency 'treetop', '>= 1.4.7'
   s.add_development_dependency 'bacon', '>= 1.1.0'
+  
+  s.rdoc_options << '--title' << 'Randall' <<
+                    '--main' << 'README.rdoc' <<
+                    '--line-numbers' << '--exclude="spec/*"'
 end
 
 task :default => :spec
